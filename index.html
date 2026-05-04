@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>China National ETS Quota Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f14;
+    --surface: #131920;
+    --surface2: #1a2330;
+    --border: #243040;
+    --accent: #00c896;
+    --accent-dim: rgba(0,200,150,0.12);
+    --danger: #ff4d6a;
+    --danger-dim: rgba(255,77,106,0.12);
+    --warn: #f5a623;
+    --warn-dim: rgba(245,166,35,0.1);
+    --text: #e2eaf4;
+    --muted: #6b7f96;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 40px 20px 60px;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,200,150,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,150,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  .header h1 {
+    font-family: var(--mono);
+    font-size: clamp(18px, 3vw, 26px);
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+    letter-spacing: -0.3px;
+  }
+
+  .header-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 8px;
+    font-family: var(--mono);
+  }
+
+  /* Sections */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,200,150,0.25);
+    border-radius: 4px;
+    padding: 2px 7px;
+    letter-spacing: 1px;
+  }
+
+  .section-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .section-body { padding: 24px 20px; }
+
+  /* Input rows */
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .input-row:last-child { margin-bottom: 0; }
+
+  .input-label {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .input-label span {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  input[type="number"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 14px;
+    width: 180px;
+    text-align: right;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  input[type="number"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,200,150,0.12);
+  }
+
+  /* Result rows */
+  .result-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .result-row:first-child { padding-top: 0; }
+
+  .result-label {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .result-label .formula {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(0,200,150,0.45);
+    margin-top: 3px;
+  }
+
+  .result-value {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: right;
+    color: var(--text);
+    min-width: 180px;
+  }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+  }
+
+  .status-badge.surplus {
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,200,150,0.3);
+    color: var(--accent);
+  }
+
+  .status-badge.deficit {
+    background: var(--danger-dim);
+    border: 1px solid rgba(255,77,106,0.3);
+    color: var(--danger);
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  .surplus .status-dot { background: var(--accent); }
+  .deficit .status-dot { background: var(--danger); }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Cost section colors */
+  .cost-positive { color: var(--accent); }
+  .cost-negative { color: var(--danger); }
+  .cost-neutral  { color: var(--warn); }
+
+  /* Compliance status block */
+  .compliance-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .compliance-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .compliance-row:first-child { padding-top: 0; }
+
+  .compliance-label { font-size: 13px; color: var(--muted); }
+
+  .surplus-val { color: var(--accent); font-family: var(--mono); font-size: 15px; font-weight: 600; min-width: 180px; text-align: right; }
+  .deficit-val { color: var(--danger); font-family: var(--mono); font-size: 15px; font-weight: 600; min-width: 180px; text-align: right; }
+
+  /* Summary card */
+  .summary-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .summary-item {}
+  .summary-item .s-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .summary-item .s-value {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .divider { width: 1px; background: var(--border); }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* Transition on value changes */
+  .result-value, .surplus-val, .deficit-val {
+    transition: color 0.3s;
+  }
+
+  @media (max-width: 540px) {
+    .input-row, .result-row, .compliance-row { grid-template-columns: 1fr; }
+    input[type="number"] { width: 100%; }
+    .result-value, .surplus-val, .deficit-val { text-align: left; min-width: unset; }
+    .summary-card { grid-template-columns: 1fr; }
+    .divider { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-tag">&#x25CF; China National ETS · 2025 Allocation Scheme</div>
+    <h1>Quota Calculator</h1>
+    <div class="header-sub">Carbon emissions compliance & cost impact tool</div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">Input Parameters</span>
+    </div>
+    <div class="section-body">
+      <div class="input-row">
+        <div class="input-label">
+          Actual Production
+          <span>tons</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="production" value="1000000" step="1000" min="0" oninput="calculate()">
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-label">
+          Actual Intensity (I)
+          <span>kg CO₂ / ton</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="intensity" value="800" step="1" min="0" oninput="calculate()">
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-label">
+          Industry Balance Value (BP)
+          <span>kg CO₂ / ton</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="balance" value="661" step="1" min="0" oninput="calculate()">
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-label">
+          Carbon Price
+          <span>IDR / ton CO₂</span>
+        </div>
+        <div class="input-wrap">
+          <input type="number" id="price" value="75000" step="1000" min="0" oninput="calculate()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALCULATIONS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">Calculations</span>
+    </div>
+    <div class="section-body">
+      <div class="result-row">
+        <div class="result-label">
+          Intensity Deviation (X)
+          <span class="formula">= (BP − I) / BP</span>
+        </div>
+        <div class="result-value" id="r-deviation">—</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">
+          Intensity Coefficient (α)
+          <span class="formula">= +0.03 if X ≥ 0.2 | −0.03 if X ≤ −0.2 | 0.15×X otherwise</span>
+        </div>
+        <div class="result-value" id="r-alpha">—</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">
+          Total Actual Emissions (E)
+          <span class="formula">= Production × Intensity / 1000</span>
+        </div>
+        <div class="result-value" id="r-emissions">—</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">
+          Allocated Quota (A)
+          <span class="formula">= E × (1 + α)</span>
+        </div>
+        <div class="result-value" id="r-quota">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLIANCE -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">Compliance Status</span>
+    </div>
+    <div class="section-body">
+      <div class="compliance-row">
+        <div class="compliance-label">Surplus / (Deficit)</div>
+        <div class="surplus-val" id="r-surplus">—</div>
+      </div>
+      <div class="compliance-row">
+        <div class="compliance-label">Status</div>
+        <div>
+          <span class="status-badge deficit" id="r-status-badge">
+            <span class="status-dot"></span>
+            <span id="r-status-text">—</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COST -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">Cost Implication</span>
+    </div>
+    <div class="section-body">
+      <div class="result-row">
+        <div class="result-label">
+          Carbon Cost — Sell (+) / Purchase (−)
+          <span class="formula">= Carbon Price × Surplus / Deficit</span>
+        </div>
+        <div class="result-value" id="r-cost">—</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">
+          Cost / Benefit per Ton of Product
+          <span class="formula">= Carbon Cost / Production</span>
+        </div>
+        <div class="result-value" id="r-per-ton">—</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">
+          % of Total Product Price
+          <span class="formula">Assumption: IDR 1,000,000 / ton product</span>
+        </div>
+        <div class="result-value" id="r-pct">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-card">
+    <div class="summary-item">
+      <div class="s-label">Emissions (t CO₂)</div>
+      <div class="s-value" id="s-emissions" style="color: var(--warn)">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-item">
+      <div class="s-label">Quota Δ (t CO₂)</div>
+      <div class="s-value" id="s-surplus">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-item">
+      <div class="s-label">Carbon Cost (IDR)</div>
+      <div class="s-value" id="s-cost">—</div>
+    </div>
+  </div>
+
+  <div class="footer">China ETS · 2025 · Figures are indicative only</div>
+</div>
+
+<script>
+function fmt(num, dec = 0) {
+  if (num === null || isNaN(num)) return '—';
+  const absVal = Math.abs(num);
+  let str;
+  if (dec === 0) {
+    str = absVal.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  } else {
+    str = absVal.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+  return num < 0 ? `(${str})` : str;
+}
+
+function fmtShort(num) {
+  if (num === null || isNaN(num)) return '—';
+  const abs = Math.abs(num);
+  let str;
+  if (abs >= 1e9) str = (abs / 1e9).toFixed(1) + 'B';
+  else if (abs >= 1e6) str = (abs / 1e6).toFixed(1) + 'M';
+  else if (abs >= 1e3) str = (abs / 1e3).toFixed(0) + 'K';
+  else str = abs.toFixed(0);
+  return num < 0 ? `(${str})` : str;
+}
+
+function setVal(id, text, color) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  if (color) el.style.color = color;
+}
+
+function calculate() {
+  const production = parseFloat(document.getElementById('production').value) || 0;
+  const intensity   = parseFloat(document.getElementById('intensity').value) || 0;
+  const balance     = parseFloat(document.getElementById('balance').value) || 0;
+  const price       = parseFloat(document.getElementById('price').value) || 0;
+
+  // Formulas
+  const X = balance !== 0 ? (balance - intensity) / balance : 0;
+  const alpha = X >= 0.2 ? 0.03 : (X <= -0.2 ? -0.03 : 0.15 * X);
+  const E = (production * intensity) / 1000;
+  const A = E * (1 + alpha);
+  const surplus = A - E;
+  const carbonCost = price * surplus;
+  const perTon = production !== 0 ? carbonCost / production : 0;
+  const pct = Math.abs(perTon / 1000000) * 100;
+
+  const isSurplus = surplus >= 0;
+
+  // Section 02
+  setVal('r-deviation', X.toFixed(4), X >= 0 ? 'var(--accent)' : 'var(--danger)');
+  setVal('r-alpha', alpha.toFixed(4), alpha >= 0 ? 'var(--accent)' : 'var(--danger)');
+  setVal('r-emissions', fmt(E) + ' t CO₂', 'var(--warn)');
+  setVal('r-quota', fmt(A) + ' t CO₂', 'var(--text)');
+
+  // Section 03
+  const surplusEl = document.getElementById('r-surplus');
+  surplusEl.textContent = fmt(surplus) + ' t CO₂';
+  surplusEl.style.color = isSurplus ? 'var(--accent)' : 'var(--danger)';
+  surplusEl.className = isSurplus ? 'surplus-val' : 'deficit-val';
+
+  const badge = document.getElementById('r-status-badge');
+  const statusText = document.getElementById('r-status-text');
+  badge.className = 'status-badge ' + (isSurplus ? 'surplus' : 'deficit');
+  statusText.textContent = isSurplus ? 'SURPLUS' : 'DEFICIT';
+
+  // Section 04
+  const costColor = isSurplus ? 'var(--accent)' : 'var(--danger)';
+  setVal('r-cost', fmt(carbonCost) + ' IDR', costColor);
+  setVal('r-per-ton', fmt(perTon) + ' IDR/ton', costColor);
+  setVal('r-pct', pct.toFixed(4) + '%', 'var(--warn)');
+
+  // Summary
+  setVal('s-emissions', fmtShort(E), 'var(--warn)');
+  setVal('s-surplus', fmtShort(surplus), isSurplus ? 'var(--accent)' : 'var(--danger)');
+  setVal('s-cost', fmtShort(carbonCost), costColor);
+}
+
+calculate();
+</script>
+</body>
+</html>
